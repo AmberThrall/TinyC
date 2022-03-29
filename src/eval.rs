@@ -29,6 +29,16 @@ impl Evaluator {
         if self.stack.len() == 0 {
             self.push_scope();
         }
+
+        // Search the stack backwards.
+        for mut scope in self.stack.iter_mut().rev() {
+            if let Some(x) = scope.get(&ident) {
+                scope.insert(ident, value);
+                return;
+            }
+        }
+
+        // Not already in the stack, add to top scope.
         let mut scope = self.stack.last_mut().unwrap();
         scope.insert(ident, value);
     }
@@ -109,8 +119,11 @@ mod tests {
         assert_eq!(e.read_stack("y".to_string()), Some(&5));
         assert_eq!(e.read_stack("z".to_string()), Some(&-2));
 
+        e.write_stack("x".to_string(), 3);
+        assert_eq!(e.read_stack("x".to_string()), Some(&3));
+
         e.pop_scope();
-        assert_eq!(e.read_stack("x".to_string()), Some(&14));
+        assert_eq!(e.read_stack("x".to_string()), Some(&3));
         assert_eq!(e.read_stack("y".to_string()), Some(&5));
         assert_eq!(e.read_stack("z".to_string()), None);
     }
