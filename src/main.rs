@@ -15,6 +15,7 @@ fn main() {
         Err(e) => println!("Parsing error: {}", e),
         Ok(ast) => {
             println!("AST: {:#?}", ast);
+            println!("{}", ast.graphviz("ast"));
             // let mut evaluator = Evaluator::new();
             // match evaluator.eval(pair) {
             //     Err(e) => println!("Error occured: {}", e),

@@ -91,6 +91,122 @@ pub enum Node {
     }
 }
 
+impl Node {
+    pub fn graphviz(&self, graphname: &str) -> String {
+        format!("graph {} {{\n  // Nodes:\n{}\n\n  // Edges:\n{}\n}}",
+            graphname,
+            self.graphviz_build_nodes(vec![0]),
+            self.graphviz_build_edges(vec![0])
+        )
+    }
+
+    fn graphviz_build_nodes(&self, indices: Vec<usize>) -> String {
+        let name = format!("node_{}", indices.iter().map(|x| format!("{}", x)).collect::<Vec<_>>().join("_"));
+
+        let new_indices = |i: usize| -> Vec<usize> {
+            let mut new_indices = indices.clone();
+            new_indices.push(i);
+            new_indices
+        };
+
+        match self {
+            Node::Program { statement } => match statement {
+                Some(n) => format!("  {} [label=\"Program\"];\n{}", name, n.graphviz_build_nodes(new_indices(0))),
+                None => format!("  {} [label=\"Program\"];", name)
+            },
+            Node::IfStatement { paren_expr, statement } => format!("  {} [label=\"IfStatement\"];\n{}\n{}", name,
+                 paren_expr.graphviz_build_nodes(new_indices(0)), statement.graphviz_build_nodes(new_indices(1))),
+            Node::IfElseStatement { paren_expr, true_statement, false_statement } => format!("  {} [label=\"IfElseStatement\"];\n{}\n{}\n{}",
+                name,
+                paren_expr.graphviz_build_nodes(new_indices(0)),
+                true_statement.graphviz_build_nodes(new_indices(1)),
+                false_statement.graphviz_build_nodes(new_indices(2))),
+            Node::WhileStatement { paren_expr, statement } => format!("  {} [label=\"WhileStatement\"];\n{}\n{}", name,
+                paren_expr.graphviz_build_nodes(new_indices(0)), statement.graphviz_build_nodes(new_indices(1))),
+            Node::DoStatement { paren_expr, statement } => format!("  {} [label=\"DoStatement\"];\n{}\n{}", name,
+                paren_expr.graphviz_build_nodes(new_indices(0)), statement.graphviz_build_nodes(new_indices(1))),
+            Node::BlockStatement { statements } => format!("  {} [label=\"BlockStatement\"];\n{}", name,
+                    statements.iter().enumerate().map(|(i, s)| s.graphviz_build_nodes(new_indices(i))).collect::<Vec<_>>().join("\n")
+                ),
+            Node::PrintStatement { expr } => format!("  {} [label=\"PrintStatement\"];\n{}", name,
+                expr.graphviz_build_nodes(new_indices(0))),
+            Node::EmptyStatement => format!("  {} [label=\"EmptyStatement\"];", name),
+            Node::Int(x) => format!("  {} [label=\"Int({})\"];", name, x),
+            Node::Id(x) => format!("  {} [label=\"Id({})\"];", name, x),
+            Node::BinaryOp { op, lhs, rhs } => format!("  {} [label=\"BinaryOp ({:?})\"];\n{}\n{}",
+                name, op,
+                lhs.graphviz_build_nodes(new_indices(0)),
+                rhs.graphviz_build_nodes(new_indices(1))),
+            _ => format!("  {};", name)
+        }
+    }
+
+    fn graphviz_build_edges(&self, indices: Vec<usize>) -> String {
+        let name = format!("node_{}", indices.iter().map(|x| format!("{}", x)).collect::<Vec<_>>().join("_"));
+
+        let new_indices = |i: usize| -> Vec<usize> {
+            let mut new_indices = indices.clone();
+            new_indices.push(i);
+            new_indices
+        };
+
+        let edge = |i: usize| -> String {
+            format!("{} -- {}_{}", name, name, i)
+        };
+
+        match self {
+            Node::Program { statement } => match statement {
+                Some(n) => format!("  {} [label=\"statement\"];\n{}", edge(0), n.graphviz_build_edges(new_indices(0))),
+                None => "".to_string()
+            },
+            Node::IfStatement { paren_expr, statement } => format!(
+                "  {} [label=\"paren_expr\"];\n  {} [label=\"statement\"];\n{}{}",
+                edge(0), edge(1),
+                paren_expr.graphviz_build_edges(new_indices(0)),
+                statement.graphviz_build_edges(new_indices(1))
+            ),
+            Node::IfElseStatement { paren_expr, true_statement, false_statement } => format!(
+                "  {} [label=\"paren_expr\"];\n  {} [label=\"true_statement\"];\n  {} [label=\"false_statement\"];\n{}{}{}",
+                edge(0), edge(1), edge(2),
+                paren_expr.graphviz_build_edges(new_indices(0)),
+                true_statement.graphviz_build_edges(new_indices(1)),
+                false_statement.graphviz_build_edges(new_indices(2))
+            ),
+            Node::WhileStatement { paren_expr, statement } => format!(
+                "  {} [label=\"paren_expr\"];\n  {} [label=\"statement\"];\n{}{}",
+                edge(0), edge(1),
+                paren_expr.graphviz_build_edges(new_indices(0)),
+                statement.graphviz_build_edges(new_indices(1))
+            ),
+            Node::DoStatement { paren_expr, statement } => format!(
+                "  {} [label=\"paren_expr\"];\n  {} [label=\"statement\"];\n{}{}",
+                edge(0), edge(1),
+                paren_expr.graphviz_build_edges(new_indices(0)),
+                statement.graphviz_build_edges(new_indices(1))
+            ),
+            Node::BlockStatement { statements } => format!("{}\n{}",
+                statements.iter().enumerate().map(|(i, _)| format!("  {} [label=\"statement\"];\n", edge(i))).collect::<Vec<_>>().join(""),
+                statements.iter().enumerate().map(|(i, s)| s.graphviz_build_edges(new_indices(i))).collect::<Vec<_>>().join("")
+            ),
+            Node::PrintStatement { expr } => format!(
+                "  {} [label=\"expr\"];\n{}",
+                edge(0),
+                expr.graphviz_build_edges(new_indices(0))
+            ),
+            Node::EmptyStatement => "".to_string(),
+            Node::Int(_) => "".to_string(),
+            Node::Id(_) => "".to_string(),
+            Node::BinaryOp { op, lhs, rhs } => format!(
+                "  {} [label=\"lhs\"];\n  {} [label=\"rhs\"];\n{}{}",
+                edge(0), edge(1),
+                lhs.graphviz_build_edges(new_indices(0)),
+                rhs.graphviz_build_edges(new_indices(1))
+            ),
+            _ => format!("  // Unknown node: {:?}\n", self)
+        }
+    }
+}
+
 pub fn parse(s: &str) -> Result<Node, Error<Rule>> {
     let res = TinyCParser::parse(Rule::program, s)?.next().unwrap();
     Ok(build_ast(res))
@@ -164,20 +280,6 @@ fn build_expr_ast(mut pairs: Pairs<Rule>) -> Node {
     let lhs = build_ast(pairs.next().unwrap());
     build_expr_ast_climber(&mut pairs, lhs, 0)
 }
-
-// lookahead := peek next token
-//     while lookahead is a binary operator whose precedence is >= min_precedence
-//         op := lookahead
-//         advance to next token
-//         rhs := parse_primary ()
-//         lookahead := peek next token
-//         while lookahead is a binary operator whose precedence is greater
-//                  than op's, or a right-associative operator
-//                  whose precedence is equal to op's
-//             rhs := parse_expression_1 (rhs, precedence of op + (1 if lookahead precedence is greater, else 0))
-//             lookahead := peek next token
-//         lhs := the result of applying op with operands lhs and rhs
-//     return lhs
 
 fn build_expr_ast_climber(pairs: &mut Pairs<Rule>, mut lhs: Node, min_precedence: u8) -> Node {
     let mut peekable = pairs.clone().peekable();
