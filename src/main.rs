@@ -5,11 +5,19 @@ extern crate pest_derive;
 mod parser;
 mod eval;
 
+use std::env;
 use std::fs;
 use parser::*;
 use eval::*;
 
 fn main() {
+    let filename = match env::args.nth(1) {
+        Some(x) => x,
+        None => {
+            println!("Usage: {} <filename>", env::args.nth(0).unwrap());
+            ""
+        }
+    }
     let unparsed_string = fs::read_to_string("fib.tinyc").expect("cannot read file");
     match parse(&unparsed_string) {
         Err(e) => println!("Parsing error: {}", e),
