@@ -30,7 +30,7 @@ impl Evaluator {
         }
 
         // Search the stack backwards.
-        for mut scope in self.stack.iter_mut().rev() {
+        for scope in self.stack.iter_mut().rev() {
             if let Some(x) = scope.get(&ident) {
                 scope.insert(ident, value);
                 return;
@@ -38,7 +38,7 @@ impl Evaluator {
         }
 
         // Not already in the stack, add to top scope.
-        let mut scope = self.stack.last_mut().unwrap();
+        let scope = self.stack.last_mut().unwrap();
         scope.insert(ident, value);
     }
 
@@ -98,9 +98,11 @@ impl Evaluator {
                 Ok(None)
             },
             Node::BlockStatement { statements } => {
+                self.push_scope();
                 for s in statements {
                     self.eval(&s)?;
                 }
+                self.pop_scope();
                 Ok(None)
             },
             Node::PrintStatement { paren_expr } => {

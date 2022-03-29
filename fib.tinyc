@@ -1,5 +1,8 @@
+/* fib.tinyc
+ * Calculate the Nth fibonacci number and print it out.
+ */
 {
-  N = 10;
+  N = 10; /* The fibonacci number to calculate. */
 
   if (N == 0) {
     print(0);
