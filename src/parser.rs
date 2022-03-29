@@ -6,7 +6,7 @@ use pest::iterators::{Pair, Pairs};
 #[grammar = "tinyc.pest"]
 pub struct TinyCParser;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Operator {
     Plus,
     Minus,
@@ -252,8 +252,8 @@ fn build_ast(pair: Pair<Rule>) -> Node {
         Rule::do_statement => {
             let mut pairs = pair.into_inner();
             Node::DoStatement {
-                paren_expr: Box::new(build_ast(pairs.next().unwrap())),
-                statement: Box::new(build_ast(pairs.next().unwrap()))
+                statement: Box::new(build_ast(pairs.next().unwrap())),
+                paren_expr: Box::new(build_ast(pairs.next().unwrap()))
             }
         },
         Rule::block_statement => {

@@ -1,5 +1,4 @@
 use crate::parser::*;
-use pest::iterators::Pair;
 use std::collections::HashMap;
 
 pub struct Evaluator {
@@ -53,51 +52,94 @@ impl Evaluator {
         None
     }
 
-    pub fn eval(&mut self, pair: Pair<Rule>) -> Result<(), String> {
-        match pair.as_rule() {
-            Rule::program => self.eval_program(pair),
-            Rule::statement => self.eval_statement(pair),
-            _ => Err(format!("Unsupported rule '{:?}'", pair.as_rule()))
-        }
-    }
-
-    fn eval_program(&mut self, pair: Pair<Rule>) -> Result<(), String> {
-        for record in pair.into_inner() {
-            match record.as_rule() {
-                Rule::statement => self.eval_statement(record)?,
-                Rule::EOI => return Ok(()),
-                _ => return Err(format!("Invalid record '{:?}' in program", record.as_rule()))
-            }
-        }
-        Err("Never reached end of input in program".to_string())
-    }
-
-    fn eval_statement(&mut self, pair: Pair<Rule>) -> Result<(), String> {
-        let stmt = pair.into_inner().next().unwrap();
-        println!("Entered statement: {:?}", stmt.as_rule());
-
-        match stmt.as_rule() {
-            Rule::block_statement => {
-                for s in stmt.into_inner() {
-                    self.eval_statement(s)?;
-                }
-                Ok(())
+    pub fn eval(&mut self, node: &Node) -> Result<Option<i64>, String> {
+        match node {
+            Node::Program { statement } => match statement {
+                Some(s) => self.eval(&s),
+                None => Ok(None)
             },
-            Rule::expr_statement => self.eval_expr(stmt.into_inner().next().unwrap()),
-            _ => return Err(format!("Unsupported statement of type '{:?}'", stmt.as_rule()))
+            Node::IfStatement { paren_expr, statement } => {
+                let condition = self.eval(&paren_expr)?.unwrap();
+                if condition > 0 {
+                    self.eval(&statement)
+                } else {
+                    Ok(None)
+                }
+            },
+            Node::IfElseStatement { paren_expr, true_statement, false_statement } => {
+                let condition = self.eval(&paren_expr)?.unwrap();
+                if condition > 0 {
+                    self.eval(&true_statement)
+                } else {
+                    self.eval(&false_statement)
+                }
+            },
+            Node::WhileStatement { paren_expr, statement } => {
+                loop {
+                    let condition = self.eval(&paren_expr)?.unwrap();
+                    if condition > 0 {
+                        self.eval(&statement)?;
+                    } else {
+                        break;
+                    }
+                }
+                Ok(None)
+            },
+            Node::DoStatement { paren_expr, statement } => {
+                loop {
+                    self.eval(&statement)?;
+
+                    let condition = self.eval(&paren_expr)?.unwrap();
+                    if condition > 0 {
+                    } else {
+                        break;
+                    }
+                }
+                Ok(None)
+            },
+            Node::BlockStatement { statements } => {
+                for s in statements {
+                    self.eval(&s)?;
+                }
+                Ok(None)
+            },
+            Node::PrintStatement { paren_expr } => {
+                println!("{}", self.eval(&paren_expr)?.unwrap());
+                Ok(None)
+            },
+            Node::EmptyStatement => Ok(None),
+            Node::Int(x) => Ok(Some(x.clone())),
+            Node::Id(x) => match self.read_stack(x.clone()) {
+                Some(v) => Ok(Some(v.clone())),
+                None => Err(format!("No variable named '{}' found in stack", x))
+            },
+            Node::BinaryOp { op, lhs, rhs } => {
+                let r = self.eval(&rhs)?.unwrap();
+
+                match op {
+                    Operator::Assign => {
+                        match &**lhs {
+                            Node::Id(id) => {
+                                self.write_stack(id.clone(), r);
+                                Ok(Some(r))
+                            },
+                            _ => Err("Expected identifier to the left of '='".to_string())
+                        }
+                    },
+                    Operator::Plus => Ok(Some(self.eval(&lhs)?.unwrap() + r)),
+                    Operator::Minus => Ok(Some(self.eval(&lhs)?.unwrap() - r)),
+                    Operator::Times => Ok(Some(self.eval(&lhs)?.unwrap() * r)),
+                    Operator::Divide => Ok(Some(self.eval(&lhs)?.unwrap() / r)),
+                    Operator::GreaterThen => Ok(Some(if self.eval(&lhs)?.unwrap() > r { 1 } else { 0 })),
+                    Operator::LessThen => Ok(Some(if self.eval(&lhs)?.unwrap() < r { 1 } else { 0 })),
+                    Operator::GreaterThenOrEqual => Ok(Some(if self.eval(&lhs)?.unwrap() >= r { 1 } else { 0 })),
+                    Operator::LessThenOrEqual => Ok(Some(if self.eval(&lhs)?.unwrap() <= r { 1 } else { 0 })),
+                    Operator::Equals => Ok(Some(if self.eval(&lhs)?.unwrap() == r { 1 } else { 0 })),
+                    _ => Err(format!("Unknown operator {:?}", op))
+                }
+            },
+            _ => Err(format!("Unsupported node '{:?}'", node))
         }
-    }
-
-    fn eval_expr(&mut self, pair: Pair<Rule>) -> Result<(), String> {
-        println!("Expr: {:?}", pair);
-        let mut records = pair.into_inner();
-        let lhs = records.next();
-        let op = records.next();
-        let rhs = records.next();
-
-        println!("{:?} {:?} {:?}", lhs, op, rhs);
-
-        Ok(())
     }
 }
 

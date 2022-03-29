@@ -1,0 +1,20 @@
+{
+  N = 10;
+
+  if (N == 0) {
+    print(0);
+  }
+  else {
+    a = 0;
+    b = 1;
+    n = 1;
+    while (n < N) {
+      tmp = b;
+      b = a + b;
+      a = tmp;
+      n = n + 1;
+    }
+
+    print(b);
+  }
+}
