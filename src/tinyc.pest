@@ -1,0 +1,28 @@
+program = { SOI ~ statement? ~ EOI }
+statement = {
+  if_else_statement
+  | if_statement
+  | while_statement
+  | do_statement
+  | block_statement
+  | expr_statement
+  | print_statement
+  | semicolon
+}
+if_statement = { "if" ~ paren_expr ~ statement }
+if_else_statement = { "if" ~ paren_expr ~ statement ~ "else" ~ statement }
+while_statement = { "while" ~ paren_expr ~ statement }
+do_statement = { "do" ~ statement ~ "while" ~ paren_expr ~ semicolon }
+block_statement = { "{" ~ statement* ~ "}" }
+expr_statement = { expr ~ semicolon }
+print_statement = { "print" ~ "(" ~ expr ~ ")" ~ semicolon }
+semicolon = { ";" }
+
+paren_expr = { "(" ~ expr ~ ")" }
+expr = { term ~ (op ~ term)* }
+term = { id | int | paren_expr }
+op = { "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "=" }
+id = @{ (ASCII_ALPHA | "_") ~ (ASCII_DIGIT | ASCII_ALPHA | "_")* }
+int = @{ "-"? ~ ASCII_DIGIT+ }
+WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
+COMMENT = _{ "/*" ~ (!"*/" ~ ANY)* ~ "*/" }
