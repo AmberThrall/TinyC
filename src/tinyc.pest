@@ -15,7 +15,7 @@ while_statement = { "while" ~ paren_expr ~ statement }
 do_statement = { "do" ~ statement ~ "while" ~ paren_expr ~ semicolon }
 block_statement = { "{" ~ statement* ~ "}" }
 expr_statement = { expr ~ semicolon }
-print_statement = { "print" ~ "(" ~ expr ~ ")" ~ semicolon }
+print_statement = { "print" ~ paren_expr ~ semicolon }
 semicolon = { ";" }
 
 paren_expr = { "(" ~ expr ~ ")" }

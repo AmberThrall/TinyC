@@ -79,7 +79,7 @@ pub enum Node {
         statements: Vec<Box<Node>>
     },
     PrintStatement {
-        expr: Box<Node>
+        paren_expr: Box<Node>
     },
     EmptyStatement,
     Int(i64),
@@ -128,8 +128,8 @@ impl Node {
             Node::BlockStatement { statements } => format!("  {} [label=\"BlockStatement\"];\n{}", name,
                     statements.iter().enumerate().map(|(i, s)| s.graphviz_build_nodes(new_indices(i))).collect::<Vec<_>>().join("\n")
                 ),
-            Node::PrintStatement { expr } => format!("  {} [label=\"PrintStatement\"];\n{}", name,
-                expr.graphviz_build_nodes(new_indices(0))),
+            Node::PrintStatement { paren_expr } => format!("  {} [label=\"PrintStatement\"];\n{}", name,
+                paren_expr.graphviz_build_nodes(new_indices(0))),
             Node::EmptyStatement => format!("  {} [label=\"EmptyStatement\"];", name),
             Node::Int(x) => format!("  {} [label=\"Int({})\"];", name, x),
             Node::Id(x) => format!("  {} [label=\"Id({})\"];", name, x),
@@ -188,10 +188,10 @@ impl Node {
                 statements.iter().enumerate().map(|(i, _)| format!("  {} [label=\"statement\"];\n", edge(i))).collect::<Vec<_>>().join(""),
                 statements.iter().enumerate().map(|(i, s)| s.graphviz_build_edges(new_indices(i))).collect::<Vec<_>>().join("")
             ),
-            Node::PrintStatement { expr } => format!(
-                "  {} [label=\"expr\"];\n{}",
+            Node::PrintStatement { paren_expr } => format!(
+                "  {} [label=\"paren_expr\"];\n{}",
                 edge(0),
-                expr.graphviz_build_edges(new_indices(0))
+                paren_expr.graphviz_build_edges(new_indices(0))
             ),
             Node::EmptyStatement => "".to_string(),
             Node::Int(_) => "".to_string(),
@@ -263,7 +263,7 @@ fn build_ast(pair: Pair<Rule>) -> Node {
             }
             Node::BlockStatement { statements: stmts }
         },
-        Rule::print_statement => Node::PrintStatement { expr: Box::new(build_ast(pair.into_inner().next().unwrap())) },
+        Rule::print_statement => Node::PrintStatement { paren_expr: Box::new(build_ast(pair.into_inner().next().unwrap())) },
         Rule::paren_expr => build_ast(pair.into_inner().next().unwrap()),
         Rule::expr_statement => build_ast(pair.into_inner().next().unwrap()),
         Rule::semicolon => Node::EmptyStatement,
