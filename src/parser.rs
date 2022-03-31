@@ -17,7 +17,9 @@ pub enum Operator {
     LessThenOrEqual,
     GreaterThenOrEqual,
     Equals,
-    Assign
+    Assign,
+    And,
+    Or
 }
 
 impl Operator {
@@ -33,21 +35,25 @@ impl Operator {
             ">=" => Some(Operator::GreaterThenOrEqual),
             "==" => Some(Operator::Equals),
             "=" => Some(Operator::Assign),
+            "&&"=> Some(Operator::And),
+            "||" => Some(Operator::Or),
             _ => None
         }
     }
 
     pub fn precedence(&self) -> u8 {
         match self {
-            Operator::Plus => 1,
-            Operator::Minus => 1,
-            Operator::Times => 2,
-            Operator::Divide => 2,
-            Operator::LessThen => 3,
-            Operator::GreaterThen => 3,
-            Operator::LessThenOrEqual => 3,
-            Operator::GreaterThenOrEqual => 3,
-            Operator::Equals => 3,
+            Operator::Plus => 3,
+            Operator::Minus => 3,
+            Operator::Times => 4,
+            Operator::Divide => 4,
+            Operator::LessThen => 2,
+            Operator::GreaterThen => 2,
+            Operator::LessThenOrEqual => 2,
+            Operator::GreaterThenOrEqual => 2,
+            Operator::Equals => 2,
+            Operator::And => 1,
+            Operator::Or => 1,
             Operator::Assign => 0,
         }
     }

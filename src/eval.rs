@@ -137,6 +137,8 @@ impl Evaluator {
                     Operator::GreaterThenOrEqual => Ok(Some(if self.eval(&lhs)?.unwrap() >= r { 1 } else { 0 })),
                     Operator::LessThenOrEqual => Ok(Some(if self.eval(&lhs)?.unwrap() <= r { 1 } else { 0 })),
                     Operator::Equals => Ok(Some(if self.eval(&lhs)?.unwrap() == r { 1 } else { 0 })),
+                    Operator::And => Ok(Some(if self.eval(&lhs)?.unwrap() > 0 && r > 0 { 1 } else { 0 })),
+                    Operator::Or => Ok(Some(if self.eval(&lhs)?.unwrap() > 0 || r > 0 { 1 } else { 0 })),
                     _ => Err(format!("Unknown operator {:?}", op))
                 }
             },
