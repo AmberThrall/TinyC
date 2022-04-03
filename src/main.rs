@@ -10,17 +10,26 @@ use std::fs;
 use std::process;
 use parser::*;
 use eval::*;
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+#[clap(name = "tinyc")]
+#[clap(author = "Amber Thrall <amber@thrall.me>")]
+#[clap(version = "1.0")]
+#[clap(about = "Tiny-C interpreter", long_about = None)]
+struct Cli {
+    /// File to run
+    filename: String,
+
+    /// Print out graphviz code for the ast
+    #[clap(short, long)]
+    graphviz: bool,
+}
 
 fn main() {
-    let filename = match env::args().nth(1) {
-        Some(x) => x,
-        None => {
-            println!("Usage: {} <filename>", env::args().nth(0).unwrap());
-            process::exit(1);
-        }
-    };
+    let cli = Cli::parse();
 
-    let unparsed_string = match fs::read_to_string(filename) {
+    let unparsed_string = match fs::read_to_string(cli.filename) {
         Ok(x) => x,
         Err(e) => {
             println!("File error: {}", e);
@@ -35,6 +44,10 @@ fn main() {
             process::exit(1);
         }
     };
+
+    if cli.graphviz {
+        println!("{}\n", ast.graphviz("ast"));
+    }
 
     let mut evaluator = Evaluator::new();
     match evaluator.eval(&ast) {
