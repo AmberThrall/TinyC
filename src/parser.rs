@@ -286,12 +286,12 @@ fn build_ast(pair: Pair<Rule>) -> Node {
 
 fn build_expr_ast(mut pairs: Pairs<Rule>) -> Node {
     let lhs = build_ast(pairs.next().unwrap());
-    build_expr_ast_climber(&mut pairs, lhs, 0)
+    let mut peekable = pairs.peekable();
+    build_expr_ast_climber(&mut peekable, lhs, 0)
 }
 
-fn build_expr_ast_climber(pairs: &mut Pairs<Rule>, mut lhs: Node, min_precedence: u8) -> Node {
-    let mut peekable = pairs.clone().peekable();
-    let mut peek = peekable.peek();
+fn build_expr_ast_climber(pairs: &mut core::iter::Peekable<Pairs<Rule>>, mut lhs: Node, min_precedence: u8) -> Node {
+    let mut peek = pairs.peek();
     while peek != None {
         let operator = Operator::from(peek.unwrap().as_str()).unwrap();
         if operator.precedence() < min_precedence {
@@ -302,8 +302,7 @@ fn build_expr_ast_climber(pairs: &mut Pairs<Rule>, mut lhs: Node, min_precedence
         let lookahead = pairs.next();
         let mut rhs = build_ast(lookahead.clone().unwrap());
 
-        peekable = pairs.clone().peekable();
-        peek = peekable.peek();
+        peek = pairs.peek();
         while peek != None {
             let next_operator = Operator::from(peek.unwrap().as_str()).unwrap();
             if next_operator.precedence() <= operator.precedence() {
@@ -311,8 +310,7 @@ fn build_expr_ast_climber(pairs: &mut Pairs<Rule>, mut lhs: Node, min_precedence
             }
 
             rhs = build_expr_ast_climber(pairs, rhs, operator.precedence() + 1);
-            peekable = pairs.clone().peekable();
-            peek = peekable.peek();
+            peek = pairs.peek();
         }
 
         lhs = Node::BinaryOp {
