@@ -17,6 +17,7 @@ pub enum Operator {
     LessThenOrEqual,
     GreaterThenOrEqual,
     Equals,
+    NotEquals,
     Assign,
     And,
     Or
@@ -34,6 +35,7 @@ impl Operator {
             "<=" => Some(Operator::LessThenOrEqual),
             ">=" => Some(Operator::GreaterThenOrEqual),
             "==" => Some(Operator::Equals),
+            "!=" => Some(Operator::NotEquals),
             "=" => Some(Operator::Assign),
             "&&"=> Some(Operator::And),
             "||" => Some(Operator::Or),
@@ -52,6 +54,7 @@ impl Operator {
             Operator::LessThenOrEqual => 2,
             Operator::GreaterThenOrEqual => 2,
             Operator::Equals => 2,
+            Operator::NotEquals => 2,
             Operator::And => 1,
             Operator::Or => 1,
             Operator::Assign => 0,
@@ -275,7 +278,6 @@ fn build_ast(pair: Pair<Rule>) -> Node {
         Rule::semicolon => Node::EmptyStatement,
         Rule::term => build_ast(pair.into_inner().next().unwrap()),
         Rule::expr => build_expr_ast(pair.into_inner()),
-        Rule::term => build_ast(pair.into_inner().next().unwrap()),
         Rule::int => Node::Int(pair.as_str().parse().unwrap()),
         Rule::id => Node::Id(String::from(pair.as_str())),
         _ => panic!("Unknown rule: {:?}", pair.as_rule())

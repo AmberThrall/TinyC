@@ -21,7 +21,7 @@ semicolon = { ";" }
 paren_expr = { "(" ~ expr ~ ")" }
 expr = { term ~ (op ~ term)* }
 term = { id | int | paren_expr }
-op = { "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "=" | "&&" | "||" }
+op = { "+" | "-" | "*" | "/" | "<" | ">" | "<=" | ">=" | "==" | "!=" | "=" | "&&" | "||" }
 id = @{ (ASCII_ALPHA | "_") ~ (ASCII_DIGIT | ASCII_ALPHA | "_")* }
 int = @{ "-"? ~ ASCII_DIGIT+ }
 WHITESPACE = _{ " " | "\t" | "\r" | "\n" }
